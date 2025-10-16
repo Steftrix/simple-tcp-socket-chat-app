@@ -9,7 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ClientHandler implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(ClientHandler.class);
-    private static final CopyOnWriteArrayList<ClientHandler> clients = new CopyOnWriteArrayList<>();
+    public static final CopyOnWriteArrayList<ClientHandler> clients = new CopyOnWriteArrayList<>();
 
     private final Socket socket;
     private BufferedReader in;
