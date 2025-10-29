@@ -25,4 +25,8 @@ public class ServerConfig {
     public int maxClients(){
         return Integer.parseInt(properties.getProperty("max.clients", "20"));
     }
+
+    public String getHost(){
+        return properties.getProperty("server.host", "localhost");
+    }
 }
