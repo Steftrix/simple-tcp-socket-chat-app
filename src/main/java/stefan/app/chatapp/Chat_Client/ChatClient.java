@@ -14,11 +14,10 @@ public class ChatClient {
     private BufferedReader in;
     private BufferedWriter out;
     private String username;
-    private volatile boolean running = true;
 
     public ChatClient(String username) {
         this.username = username;
-        try {
+        try{
             ServerConfig config = new ServerConfig();
             String host = config.getHost();
             int port = config.getPort();
@@ -28,61 +27,62 @@ public class ChatClient {
             this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             logger.info("Connected to chat server on {}:{}", host, port);
-        } catch (IOException e) {
+        } catch (IOException e){
             logger.error("Connection failed", e);
+
         }
     }
 
-    public void startChat() {
-        try {
-            Scanner scanner = new Scanner(System.in);
-
-            while (running && socket.isConnected()) {
-                if (in.ready()) {
-                    String msgFromServer = in.readLine();
-                    if (msgFromServer != null) {
-                        System.out.println(msgFromServer);
-                    } else {
+    public void sendMessages() {
+        new Thread(() -> {
+            try (Scanner scanner = new Scanner((System.in))) {
+                while (socket.isConnected()){
+                    String msg = scanner.nextLine();
+                    if (msg.equalsIgnoreCase("exit")){
+                        closeEverything();
                         break;
                     }
-                }
-
-                if (System.in.available() > 0) {
-                    String userInput = scanner.nextLine();
-                    if (userInput.equalsIgnoreCase("exit")) {
-                        running = false;
-                        break;
-                    }
-                    out.write(username + ": " + userInput);
+                    out.write(username + ": " + msg);
                     out.newLine();
                     out.flush();
                 }
+            } catch (IOException e){
+                closeEverything();
             }
-        } catch (IOException e) {
-            logger.error("Error during chat", e);
-        } finally {
-            closeEverything();
-        }
+        }).start();
     }
 
-    public void closeEverything() {
-        running = false;
+    public void listenForMessages() {
+        new Thread(() -> {
+            String msgFromServer;
+            try {
+                while((msgFromServer = in.readLine()) != null){
+                    System.out.println(msgFromServer);
+                }
+            } catch (IOException e){
+                closeEverything();
+            }
+        }).start();
+    }
+
+    public void closeEverything(){
         try {
             if (in != null) in.close();
             if (out != null) out.close();
             if (socket != null) socket.close();
             logger.info("Disconnected from server");
-        } catch (IOException e) {
+        } catch (IOException e){
             logger.error("Error closing connection", e);
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args){
         System.out.println("Enter your username: ");
         Scanner scanner = new Scanner(System.in);
         String username = scanner.nextLine();
 
         ChatClient client = new ChatClient(username);
-        client.startChat();
+        client.listenForMessages();
+        client.sendMessages();
     }
 }
