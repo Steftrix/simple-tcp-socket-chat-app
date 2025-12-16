@@ -42,11 +42,9 @@ public class ChatClient {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             running.set(true);
             logger.info("Connected to chat server on {}:{}", host, port);
-
-            startListening();
+            // removal of autostart
         } catch (IOException e){
             logger.error("Connection failed", e);
-
         }
     }
     private void startListening(){
@@ -64,9 +62,19 @@ public class ChatClient {
         }, "ListenerThread-" + username);
         listenThread.start();
     }
+    // New method for GUI to receive messages
+    public String receiveMessage() throws IOException {
+        if (in != null && running.get()) {
+            return in.readLine();
+        }
+        return null;
+    }
     public void sendMessages() {
         sendThread = new Thread(() -> {
-            try (Scanner scanner = new Scanner((System.in))) {
+            try (Scanner scanner = new Scanner(System.in)) {
+                // Start console listening when in console mode
+                startListening();
+
                 while (running.get() && socket.isConnected()){
                     String msg = scanner.nextLine();
                     if (msg.equalsIgnoreCase("exit")){
@@ -118,6 +126,7 @@ public class ChatClient {
     public String getUsername(){
         return username;
     }
+    // Console mode entry point
     public static void main(String[] args){
         System.out.println("Enter your username: ");
         Scanner scanner = new Scanner(System.in);
