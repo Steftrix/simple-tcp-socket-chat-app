@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="stefan.app.chatapp.controllers.ChatController"
+            style="-fx-background-color: #f5f5f5;">
+
+    <!-- Top Bar -->
+    <top>
+        <VBox style="-fx-background-color: linear-gradient(to right, #667eea, #764ba2); -fx-padding: 15;">
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="💬" style="-fx-font-size: 24px;"/>
+                <VBox spacing="2">
+                    <Label fx:id="usernameLabel"
+                           text="Username"
+                           style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Label text="●" fx:id="statusIndicator" style="-fx-font-size: 12px; -fx-text-fill: #4CAF50;"/>
+                        <Label fx:id="statusLabel"
+                               text="Connected"
+                               style="-fx-font-size: 12px; -fx-text-fill: rgba(255,255,255,0.9);"/>
+                    </HBox>
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <!-- Action Buttons -->
+                <HBox spacing="10">
+                    <Button text="🔄"
+                            onAction="#handleReconnect"
+                            style="-fx-background-color: rgba(255,255,255,0.2);
+                                   -fx-text-fill: white;
+                                   -fx-background-radius: 20;
+                                   -fx-font-size: 16px;
+                                   -fx-padding: 8 15;
+                                   -fx-cursor: hand;"/>
+                    <Button text="✕"
+                            onAction="#handleDisconnect"
+                            style="-fx-background-color: rgba(255,255,255,0.2);
+                                   -fx-text-fill: white;
+                                   -fx-background-radius: 20;
+                                   -fx-font-size: 16px;
+                                   -fx-padding: 8 15;
+                                   -fx-cursor: hand;"/>
+                </HBox>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- Chat Messages Area -->
+    <center>
+        <ScrollPane fx:id="scrollPane"
+                    fitToWidth="true"
+                    style="-fx-background-color: #f5f5f5; -fx-background: #f5f5f5;">
+            <VBox fx:id="messageContainer"
+                  spacing="5"
+                  style="-fx-background-color: #f5f5f5;">
+                <padding>
+                    <Insets top="20" right="10" bottom="20" left="10"/>
+                </padding>
+            </VBox>
+        </ScrollPane>
+    </center>
+
+    <!-- Bottom Input Area -->
+    <bottom>
+        <VBox style="-fx-background-color: white; -fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, -2);">
+            <HBox spacing="10" alignment="CENTER">
+                <TextField fx:id="messageField"
+                           promptText="Type your message..."
+                           HBox.hgrow="ALWAYS"
+                           style="-fx-font-size: 14px;
+                                 -fx-padding: 12 15;
+                                 -fx-background-radius: 25;
+                                 -fx-border-color: #e0e0e0;
+                                 -fx-border-radius: 25;
+                                 -fx-background-color: #f9f9f9;"/>
+
+                <Button fx:id="sendButton"
+                        text="Send 📤"
+                        onAction="#handleSend"
+                        style="-fx-background-color: linear-gradient(to right, #667eea, #764ba2);
+                               -fx-text-fill: white;
+                               -fx-font-size: 14px;
+                               -fx-font-weight: bold;
+                               -fx-background-radius: 25;
+                               -fx-padding: 12 25;
+                               -fx-cursor: hand;"/>
+            </HBox>
+
+            <HBox spacing="5" alignment="CENTER">
+                <padding>
+                    <Insets top="8"/>
+                </padding>
+                <Label text="💡 Tip: Press Enter to send"
+                       style="-fx-font-size: 11px; -fx-text-fill: #999;"/>
+            </HBox>
+        </VBox>
+    </bottom>
+
+</BorderPane>
