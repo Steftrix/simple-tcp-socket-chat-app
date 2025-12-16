@@ -86,7 +86,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>stefan.app.chatapp/stefan.app.chatapp.HelloApplication</mainClass>
+                            <mainClass>stefan.app.chatapp/stefan.app.chatapp.ChatApplication</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>
