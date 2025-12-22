@@ -29,20 +29,21 @@ public class ChatClient {
         loadConfig();
         connect();
     }
+
     private void loadConfig(){
         ServerConfig config = new ServerConfig();
         this.host = config.getHost();
         this.port = config.getPort();
     }
+
     private void connect(){
         try{
-            socket = new Socket(); //care e dif dintre implement asta si cea veche ?
-            socket.connect(new InetSocketAddress(host, port),3000);
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(host, port), 3000);
             out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             running.set(true);
             logger.info("Connected to chat server on {}:{}", host, port);
-            // removal of autostart
         } catch (IOException e){
             logger.error("Connection failed", e);
         }
@@ -51,31 +52,45 @@ public class ChatClient {
         listenThread = new Thread(() -> {
             try{
                 String msg;
-                while (running.get() && (msg = in.readLine()) != null){
+                while (running.get()) {
+                    try {
+                        msg = in.readLine();
+                    } catch (IOException e) {
+                        if (running.get()) {
+                            logger.warn("Connection lost: {}", e.getMessage());
+                        }
+                        break;
+                    }
+                    if (msg == null) break;
                     System.out.println(msg);
                 }
-            } catch( IOException e){
-                if(running.get()) logger.warn("Connection lost: {}",e.getMessage());
             } finally {
                 running.set(false);
             }
         }, "ListenerThread-" + username);
+        listenThread.setDaemon(true);
         listenThread.start();
     }
-    // New method for GUI to receive messages
     public String receiveMessage() throws IOException {
-        if (in != null && running.get()) {
-            return in.readLine();
+        if (!running.get() || in == null) {
+            return null;
         }
-        return null;
+        try {
+            return in.readLine();
+        } catch (IOException e) {
+            if (running.get()) {
+                throw e;
+            } else {
+                return null;
+            }
+        }
     }
     public void sendMessages() {
         sendThread = new Thread(() -> {
             try (Scanner scanner = new Scanner(System.in)) {
-                // Start console listening when in console mode
                 startListening();
 
-                while (running.get() && socket.isConnected()){
+                while (running.get() && socket != null && socket.isConnected()){
                     String msg = scanner.nextLine();
                     if (msg.equalsIgnoreCase("exit")){
                         closeEverything();
@@ -84,15 +99,19 @@ public class ChatClient {
                     sendMessage(msg);
                 }
             } catch (Exception e){
-                logger.error("Error sending message", e);
-                closeEverything();
+                if (running.get()) {
+                    logger.error("Error sending message", e);
+                    closeEverything();
+                }
             }
         }, "SenderThread-" + username);
+        sendThread.setDaemon(true);
         sendThread.start();
     }
+
     public void sendMessage(String message){
         try{
-            if (socket != null && socket.isConnected()){
+            if (socket != null && socket.isConnected() && running.get()){
                 out.write(username + ": " + message);
                 out.newLine();
                 out.flush();
@@ -100,33 +119,51 @@ public class ChatClient {
                 logger.warn("Cannot send message to chat server. (socket is not connected)");
             }
         } catch (IOException e){
-            logger.error("Error sending message", e);
+            if (running.get()) {
+                logger.error("Error sending message", e);
+            }
         }
     }
     public void closeEverything(){
+        if (!running.compareAndSet(true, false)) {
+            return;
+        }
+        logger.info("Closing connection for user: {}", username);
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            logger.warn("Error closing socket: {}", e.getMessage());
+        }
+        try {
+            if (in != null) in.close();
+        } catch (IOException e) {
+            logger.warn("Error closing input stream: {}", e.getMessage());
+        }
+        try {
+            if (out != null) out.close();
+        } catch (IOException e) {
+            logger.warn("Error closing output stream: {}", e.getMessage());
+        }
+        try {
+            if (listenThread != null && listenThread.isAlive()) listenThread.interrupt();
+        } catch (Exception ignored){}
         try {
             if (sendThread != null && sendThread.isAlive()) sendThread.interrupt();
-            if (listenThread != null && listenThread.isAlive()) listenThread.interrupt();
-            if (in != null) in.close();
-            if (out != null) out.close();
-            if (socket != null && !socket.isClosed()) socket.close();
-            logger.info("Disconnected from server");
-        } catch (IOException e){
-            logger.error("Error closing connection", e);
-        }
+        } catch (Exception ignored){}
+
+        logger.info("Connection closed for user: {}", username);
     }
-    public void reconnect(){
-        logger.info("{} attempting to reconnect...", username);
-        closeEverything();
-        connect();
-    }
+
     public boolean isConnected(){
-        return socket != null && socket.isConnected() && !socket.isClosed();
+        return socket != null && socket.isConnected() && !socket.isClosed() && running.get();
     }
+
     public String getUsername(){
         return username;
     }
-    // Console mode entry point
+
     public static void main(String[] args){
         System.out.println("Enter your username: ");
         Scanner scanner = new Scanner(System.in);
