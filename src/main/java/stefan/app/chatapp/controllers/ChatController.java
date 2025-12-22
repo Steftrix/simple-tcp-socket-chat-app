@@ -2,14 +2,17 @@ package stefan.app.chatapp.controllers;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import stefan.app.chatapp.Chat_Client.ChatClient;
 import stefan.app.chatapp.ChatApplication;
 
+import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -191,7 +194,6 @@ public class ChatController {
         if (!ChatApplication.shuttingDown.compareAndSet(false, true)) {
             return;
         }
-
         statusLabel.setText("Disconnecting...");
         sendButton.setDisable(true);
         messageField.setDisable(true);
@@ -201,20 +203,38 @@ public class ChatController {
                 if (client != null) {
                     client.closeEverything();
                 }
+
                 if (listenerThread != null) {
                     listenerThread.interrupt();
                 }
 
             } catch (Exception e) {
-                System.err.println("Error during cleanup: " + e.getMessage());
+                System.err.println("Error during disconnect: " + e.getMessage());
             } finally {
-                Platform.runLater(() -> {
-                    Stage stage = (Stage) sendButton.getScene().getWindow();
-                    stage.close();
-                });
+                Platform.runLater(this::returnToLogin);
             }
-        }, "Client-Cleanup").start();
+        }, "Client-Disconnect").start();
     }
+    private void returnToLogin() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    ChatApplication.class.getResource("login-view.fxml")
+            );
+
+            Scene loginScene = new Scene(loader.load(), 400, 500);
+
+            Stage stage = (Stage) sendButton.getScene().getWindow();
+            stage.setScene(loginScene);
+            stage.setTitle("Login");
+            stage.setResizable(false);
+
+            ChatApplication.shuttingDown.set(false);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public void onWindowClose() {
         handleDisconnect();
